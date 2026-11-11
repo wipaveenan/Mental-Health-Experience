@@ -281,13 +281,8 @@
     .warm-action-card {
       background-color: #FCF4E0 !important;
       border: 2px solid #F4D280;
-      box-shadow: 0 10px 24px -6px rgba(217, 120, 0, 0.10);
-      transition: all 0.2s ease;
-      cursor: pointer;
-    }
-    .warm-action-card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 14px 28px -6px rgba(217, 120, 0, 0.16);
+      box-shadow: 0 10px 24px -6px rgba(217, 120, 0, 0.08);
+      cursor: default !important;
     }
 
     /* Interactive Option Card (Real HTML Button!) */
@@ -326,6 +321,14 @@
     }
     .btn-turq:active {
       transform: translateY(0px);
+    }
+    .btn-turq.btn-disabled {
+      background: #C7D9D1 !important;
+      color: #FFFFFF !important;
+      box-shadow: none !important;
+      cursor: not-allowed !important;
+      opacity: 0.78;
+      transform: none !important;
     }
 
     .btn-blue {
@@ -688,7 +691,7 @@
       screen: "intro",        // "intro" | "question" | "result_clear" | "result_mixed" | "safety"
       previousScreen: "intro",
       currentQIndex: 0,       // 0..4
-      answers: [1, null, null, null, null],
+      answers: [null, null, null, null, null],
       microStepDone: false,
       computedOutcome: null
     };
@@ -761,7 +764,7 @@
     function jumpToIntro() {
       state.screen = "intro";
       state.currentQIndex = 0;
-      state.answers = [1, null, null, null, null];
+      state.answers = [null, null, null, null, null];
       state.microStepDone = false;
       renderApp();
     }
@@ -769,7 +772,7 @@
     function startQuiz() {
       state.screen = "question";
       state.currentQIndex = 0;
-      state.answers = [1, null, null, null, null];
+      state.answers = [null, null, null, null, null];
       renderApp();
     }
 
@@ -793,15 +796,18 @@
     }
 
     function advanceQuestionOrFinish() {
-      if (state.answers[state.currentQIndex] === null) {
-        state.answers[state.currentQIndex] = "skip";
+      const currentAns = state.answers[state.currentQIndex];
+      if (currentAns === null || currentAns === undefined || currentAns === "skip") {
+        const hintEl = document.getElementById("choice-hint-msg");
+        if (hintEl) {
+          hintEl.style.color = "#D97800";
+          hintEl.style.fontWeight = "600";
+          hintEl.textContent = "⚠️ กรุณาคลิกเลือกคำตอบ 1 ข้อ หรือกดปุ่ม “ข้ามข้อนี้ (Skip)” ด้านล่างนะคะ";
+        }
+        return;
       }
       if (state.currentQIndex < 4) {
         state.currentQIndex++;
-        if (state.answers[state.currentQIndex] === null) {
-          const defaults = [1, 2, 4, 3, 1];
-          state.answers[state.currentQIndex] = defaults[state.currentQIndex];
-        }
         renderApp();
       } else {
         finishQuiz();
@@ -1115,6 +1121,7 @@
     // -------------------------------------------------------------------------
     function renderQuestionScreen(q) {
       const selectedNeed = state.answers[state.currentQIndex];
+      const hasValidChoice = (typeof selectedNeed === "number" && selectedNeed >= 1 && selectedNeed <= 5);
 
       const progressPills = [1, 2, 3, 4, 5].map(step => {
         const active = step <= q.num;
@@ -1220,7 +1227,7 @@
               <span style="font-size:13px;font-weight:600;color:#3F6866;line-height:1.15;">ข้ามข้อนี้ (Skip)</span>
               <span style="font-size:9.5px;color:#79ADA9;line-height:1.15;">ข้อที่ข้ามจะไม่นำมานับคะแนน</span>
             </button>
-            <button onclick="advanceQuestionOrFinish()" class="btn-turq" style="height:46px;border-radius:999px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:14.5px;font-weight:600;">
+            <button onclick="advanceQuestionOrFinish()" class="btn-turq ${hasValidChoice ? '' : 'btn-disabled'}" style="height:46px;border-radius:999px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:14.5px;font-weight:600;">
               <span>${q.num === 5 ? 'ดูผลสรุป' : 'ข้อถัดไป'}</span>
               <span>›</span>
             </button>
@@ -1262,7 +1269,7 @@
                 <div style="width:210px;height:22px;border-radius:999px;background:rgba(179,237,232,0.45);margin-top:-10px;"></div>
               </div>
 
-              <div class="sub-box-offwhite" style="padding:14px 16px;text-align:center;font-size:13px;font-weight:500;color:#3F6866;">
+              <div id="choice-hint-msg" class="sub-box-offwhite" style="padding:14px 16px;text-align:center;font-size:13px;font-weight:500;color:#3F6866;transition:all 0.2s ease;">
                 💡 ทุกข้อมีปุ่ม “ข้าม” และข้อที่ข้ามจะไม่นำมานับคะแนน
               </div>
             </div>
@@ -1284,7 +1291,7 @@
                   <span style="font-size:11.5px;color:#79ADA9;">ข้อที่ข้ามจะไม่นำมานับคะแนน</span>
                 </button>
 
-                <button onclick="advanceQuestionOrFinish()" class="btn-turq" style="flex:1;height:64px;padding:0 26px;border-radius:999px;font-size:17.5px;font-weight:600;display:flex;align-items:center;justify-content:space-between;">
+                <button onclick="advanceQuestionOrFinish()" class="btn-turq ${hasValidChoice ? '' : 'btn-disabled'}" style="flex:1;height:64px;padding:0 26px;border-radius:999px;font-size:17.5px;font-weight:600;display:flex;align-items:center;justify-content:space-between;">
                   <span style="flex:1;text-align:center;padding-left:16px;">${q.num === 5 ? 'ดูผลสรุปของคุณ' : 'ข้อถัดไป'}</span>
                   <span style="width:36px;height:36px;border-radius:999px;background:rgba(255,255,255,0.25);display:flex;align-items:center;justify-content:center;font-size:20px;">›</span>
                 </button>
@@ -1336,18 +1343,15 @@
             <div style="font-size:10.2px;font-weight:500;color:#79ADA9;">สัญญาณความต้องการชัดเจน</div>
           </div>
 
-          <!-- Warm Yellow Free Daily Action Card -->
-          <div onclick="toggleMicroStepDone()" class="warm-action-card" style="border-radius:22px;padding:14px 16px;margin:8px 0;">
+          <!-- Warm Yellow Free Daily Action Card (Static Non-Clickable Display Box) -->
+          <div class="warm-action-card" style="border-radius:22px;padding:14px 16px;margin:8px 0;">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
               <span style="padding:3px 12px;border-radius:999px;background:#FFFFFF;font-size:11px;font-weight:600;color:#D97800;">🌱 ก้าวเล็ก ๆ วันนี้ (ไม่ใช้เงิน)</span>
               <span class="en-font" style="font-size:10px;font-weight:700;color:#E39200;">FREE ACTION</span>
             </div>
-            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
-              <div style="font-size:13px;font-weight:600;color:#272727;line-height:1.35;text-align:left;">
-                <div>${n.microStepLine1}</div>
-                <div>${n.microStepLine2}</div>
-              </div>
-              <span style="width:36px;height:36px;border-radius:999px;background:${state.microStepDone ? '#00C4B3' : '#FFFFFF'};color:${state.microStepDone ? '#FFFFFF' : '#E9A400'};display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;">✓</span>
+            <div style="font-size:13.5px;font-weight:600;color:#272727;line-height:1.4;text-align:left;">
+              <div>${n.microStepLine1}</div>
+              <div>${n.microStepLine2}</div>
             </div>
           </div>
 
@@ -1389,9 +1393,10 @@
             <span style="width:28px;height:28px;border-radius:999px;background:#FFFFFF;color:#00A28B;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;">›</span>
           </button>
 
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-            <button onclick="openReminderModal()" class="btn-outline-white" style="height:38px;border-radius:999px;font-size:12px;font-weight:500;">บันทึกการ์ดเตือนใจวันนี้</button>
-            <button onclick="openAllNeedsModal()" class="btn-outline-white" style="height:38px;border-radius:999px;font-size:12px;font-weight:500;">ดูความหมายทั้ง 5 หมวด</button>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;">
+            <button onclick="openReminderModal()" class="btn-outline-white" style="height:38px;border-radius:999px;font-size:11px;font-weight:600;">บันทึกการ์ดวันนี้</button>
+            <button onclick="openAllNeedsModal()" class="btn-outline-white" style="height:38px;border-radius:999px;font-size:11px;font-weight:600;">ดูทั้ง 5 หมวด</button>
+            <button onclick="jumpToIntro()" class="btn-outline-white" style="height:38px;border-radius:999px;font-size:11px;font-weight:700;background:#E0F8F6 !important;border-color:#00C4B3;color:#00A28B;">↺ กลับหน้าแรก</button>
           </div>
 
           ${renderMobileSafetyFooter()}
@@ -1433,34 +1438,32 @@
                 </p>
               </div>
 
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px;">
-                <button onclick="openReminderModal()" class="btn-outline-white" style="height:52px;border-radius:999px;font-size:14.5px;font-weight:600;">
-                  บันทึกการ์ดเตือนใจวันนี้
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:16px;">
+                <button onclick="openReminderModal()" class="btn-outline-white" style="height:52px;border-radius:999px;font-size:13.5px;font-weight:600;">
+                  บันทึกการ์ดวันนี้
                 </button>
-                <button onclick="openAllNeedsModal()" class="btn-outline-white" style="height:52px;border-radius:999px;font-size:14.5px;font-weight:600;">
-                  ดูความหมายทั้ง 5 หมวด
+                <button onclick="openAllNeedsModal()" class="btn-outline-white" style="height:52px;border-radius:999px;font-size:13.5px;font-weight:600;">
+                  ดูทั้ง 5 หมวด
+                </button>
+                <button onclick="jumpToIntro()" class="btn-outline-white" style="height:52px;border-radius:999px;font-size:13.5px;font-weight:700;background:#E0F8F6 !important;border-color:#00C4B3;color:#00A28B;">
+                  ↺ กลับไปหน้าแรก
                 </button>
               </div>
             </div>
 
             <!-- Right Column: Free Daily Action + 5-Need Score Card + Prominent OOCA CTA -->
             <div style="display:flex;flex-direction:column;justify-content:space-between;gap:20px;">
-              <!-- Card 1: Warm Action Card -->
-              <div onclick="toggleMicroStepDone()" class="warm-action-card" style="border-radius:28px;padding:28px;">
+              <!-- Card 1: Warm Action Card (Static Non-Clickable Display Box) -->
+              <div class="warm-action-card" style="border-radius:28px;padding:28px;">
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
                   <span style="padding:6px 16px;border-radius:999px;background:#FFFFFF;font-size:13px;font-weight:600;color:#D97800;">
                     🌱 ก้าวเล็ก ๆ วันนี้ (ไม่ใช้เงิน)
                   </span>
                   <span class="en-font" style="font-size:12px;font-weight:700;color:#E39200;letter-spacing:0.8px;">FREE DAILY ACTION</span>
                 </div>
-                <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;">
-                  <div style="font-size:21px;font-weight:700;color:#272727;line-height:1.38;text-align:left;">
-                    <div>${n.microStepLine1}</div>
-                    <div>${n.microStepLine2}</div>
-                  </div>
-                  <span style="width:56px;height:56px;border-radius:999px;background:${state.microStepDone ? '#00C4B3' : '#FFFFFF'};color:${state.microStepDone ? '#FFFFFF' : '#E9A400'};display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;flex-shrink:0;">
-                    ✓
-                  </span>
+                <div style="font-size:22px;font-weight:700;color:#272727;line-height:1.4;text-align:left;">
+                  <div>${n.microStepLine1}</div>
+                  <div>${n.microStepLine2}</div>
                 </div>
               </div>
 
@@ -1612,7 +1615,7 @@
           </div>
 
           <!-- White Soft OOCA Option Card -->
-          <button onclick="openOocaModal('คุยกับผู้เชี่ยวชาญ (ทางเลือกเบา ๆ สำหรับวันนี้)', 'เมื่อใจต้องการหลายอย่างพร้อมกัน มาค่อย ๆ เรียงลำดับใจด้วยกันได้นะ')" class="white-card" style="width:100%;border-radius:22px;padding:10px 14px;border-color:#80E2D9;display:flex;align-items:center;justify-content:space-between;gap:8px;text-align:left;">
+          <button onclick="openOocaModal('คุยกับผู้เชี่ยวชาญ (ทางเลือกเบา ๆ สำหรับวันนี้)', 'เมื่อใจต้องการหลายอย่างพร้อมกัน มาค่อย ๆ เรียงลำดับใจด้วยกันได้นะ')" class="white-card" style="width:100%;border-radius:22px;padding:10px 14px;border-color:#80E2D9;display:flex;align-items:center;justify-content:space-between;gap:8px;text-align:left;margin-bottom:8px;">
             <div style="display:flex;align-items:center;gap:10px;min-width:0;">
               <div style="width:44px;height:40px;border-radius:13px;background:#E0F8F6;padding:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
                 ${SVG_ASSETS.logo}
@@ -1625,6 +1628,11 @@
             </div>
             <span style="width:24px;height:24px;border-radius:999px;background:#E0F8F6;color:#00A28B;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0;">›</span>
           </button>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <button onclick="openReminderModal()" class="btn-outline-white" style="height:38px;border-radius:999px;font-size:11.5px;font-weight:600;">บันทึกการ์ดเตือนใจวันนี้</button>
+            <button onclick="jumpToIntro()" class="btn-outline-white" style="height:38px;border-radius:999px;font-size:11.5px;font-weight:700;background:#E0F8F6 !important;border-color:#00C4B3;color:#00A28B;">↺ กลับไปหน้าแรก</button>
+          </div>
 
           ${renderMobileSafetyFooter()}
         </div>
@@ -1676,9 +1684,9 @@
                 </div>
               </div>
 
-              <button onclick="openOocaModal('คุยกับผู้เชี่ยวชาญ (ทางเลือกเบา ๆ วันนี้)', 'เมื่อใจต้องการหลายอย่างพร้อมกัน มาค่อย ๆ เรียงลำดับความรู้สึกด้วยกันได้นะ')" class="white-card" style="margin-top:16px;width:100%;border-radius:24px;padding:18px 20px;border-color:#80E2D9;display:flex;align-items:center;justify-content:space-between;gap:14px;text-align:left;">
+              <button onclick="openOocaModal('คุยกับผู้เชี่ยวชาญ (ทางเลือกเบา ๆ วันนี้)', 'เมื่อใจต้องการหลายอย่างพร้อมกัน มาค่อย ๆ เรียงลำดับความรู้สึกด้วยกันได้นะ')" class="white-card" style="margin-top:14px;width:100%;border-radius:24px;padding:16px 20px;border-color:#80E2D9;display:flex;align-items:center;justify-content:space-between;gap:14px;text-align:left;">
                 <div style="display:flex;align-items:center;gap:14px;min-width:0;">
-                  <div style="width:68px;height:60px;border-radius:18px;background:#E0F8F6;padding:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                  <div style="width:64px;height:56px;border-radius:18px;background:#E0F8F6;padding:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
                     ${SVG_ASSETS.logo}
                   </div>
                   <div style="min-width:0;">
@@ -1690,15 +1698,21 @@
                 </div>
                 <span style="width:36px;height:36px;border-radius:999px;background:#E0F8F6;color:#00A28B;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px;flex-shrink:0;">›</span>
               </button>
+
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px;">
+                <button onclick="openReminderModal()" class="btn-outline-white" style="height:50px;border-radius:999px;font-size:14px;font-weight:600;">
+                  บันทึกการ์ดเตือนใจวันนี้
+                </button>
+                <button onclick="jumpToIntro()" class="btn-outline-white" style="height:50px;border-radius:999px;font-size:14px;font-weight:700;background:#E0F8F6 !important;border-color:#00C4B3;color:#00A28B;">
+                  ↺ กลับไปหน้าแรก
+                </button>
+              </div>
             </div>
 
             <!-- Right White All-5-Needs Matrix Card -->
             <div class="white-card" style="border-radius:32px;padding:32px;border-color:#EAF4F2;display:flex;flex-direction:column;justify-content:space-between;">
               <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
                 <h3 style="font-size:18.5px;font-weight:700;color:#173E3B;">สรุปความหมายและก้าวเล็ก ๆ วันนี้ (ไม่ใช้เงิน) ทั้ง 5 หมวด</h3>
-                <button onclick="openReminderModal()" style="padding:6px 16px;border-radius:999px;background:#E0F8F6;color:#00A28B;font-size:12.5px;font-weight:600;">
-                  📸 บันทึกการ์ดเตือนใจ
-                </button>
               </div>
               <div style="display:flex;flex-direction:column;gap:12px;">
                 ${desktopFiveRows}
